@@ -35,27 +35,36 @@ uv sync
 ### Image to SVG
 
 ```bash
-signature2svg photo.jpg signature.svg
+signature2svg photo.jpg
 ```
 
-Takes a photo of a signature on white paper and produces a clean SVG. Handles uneven lighting, shadows, and noise automatically.
+Produces `photo_cc.svg` and `photo_cc.png`. The PNG is the cleaned binary image (black ink on white) — useful for manual touch-up in a photo editor before re-running.
 
 ### SVG optimization
 
 ```bash
-signature2svg input.svg output.svg
+signature2svg input.svg
 ```
 
-Cleans an existing SVG: sets `fill="currentColor"` on all paths, removes backgrounds, strips editor metadata, and optimizes with scour.
+Produces `input_cc.svg`. Cleans the SVG: sets `fill="currentColor"`, removes backgrounds, strips editor metadata, optimizes with scour.
+
+### Iterative workflow
+
+1. `signature2svg photo.jpg` → produces `photo_cc.png` + `photo_cc.svg`
+2. Open `photo_cc.png` in a photo editor, remove stray dots or artifacts
+3. `signature2svg photo_cc.png` → produces `photo_cc_cc.png` + `photo_cc_cc.svg` (or rename first)
 
 ### Options
 
 ```
-signature2svg [OPTIONS] INPUT OUTPUT
+signature2svg [OPTIONS] INPUT
 
 Arguments:
   INPUT   Input image (.png/.jpg/.jpeg/.bmp/.tiff) or SVG (.svg)
-  OUTPUT  Output SVG file
+
+Output:
+  {name}_cc.svg   Clean, parametrized SVG
+  {name}_cc.png   Cleaned binary image (image mode only)
 
 Options:
   --turdsize INT        Suppress speckles smaller than N px  [default: 2]
@@ -66,7 +75,7 @@ Options:
   --debug / --no-debug  Write intermediate images to output dir  [default: no-debug]
 ```
 
-Image-specific options (`--turdsize`, `--alphamax`, `--opttolerance`, `--blur`, `--morph`, `--debug`) are ignored in SVG mode.
+Image-specific options are ignored in SVG mode.
 
 ## Output
 
