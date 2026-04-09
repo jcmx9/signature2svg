@@ -7,7 +7,7 @@ packages = ["src/signature2svg"]
 
 [project]
 name = "signature2svg"
-version = "26.4.0"
+version = "26.4.1"
 description = "Convert signature photos to clean, color-parametrizable SVGs"
 readme = "README.md"
 license = "MIT"
