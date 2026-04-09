@@ -118,9 +118,11 @@ def preprocess(png_path: Path, config: PipelineConfig) -> NDArray[np.uint8]:
     open_kernel: NDArray[np.uint8] = np.ones((2, 2), np.uint8)
     binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, open_kernel)
 
-    # Morphological closing: bridge small gaps in ink strokes
+    # Bridge gaps in ink strokes using stroke-width-proportional closing
     if config.morph > 0:
-        close_kernel: NDArray[np.uint8] = np.ones((config.morph, config.morph), np.uint8)
+        stroke_w = detect_stroke_width(binary)
+        close_size = max(config.morph, int(stroke_w * 0.8))
+        close_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (close_size, close_size))
         binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, close_kernel)
 
     # Remove small connected components (dust, speckles far from signature)
