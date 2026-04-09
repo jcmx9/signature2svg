@@ -6,6 +6,8 @@ from typing import Annotated
 import cv2
 import typer
 
+from lxml import etree
+
 from signature2svg import __version__
 from signature2svg.clean import clean_svg
 from signature2svg.config import PipelineConfig
@@ -13,6 +15,15 @@ from signature2svg.optimize import optimize_svg
 from signature2svg.parametrize import parametrize_svg
 from signature2svg.preprocess import detect_stroke_width, preprocess
 from signature2svg.vectorize import vectorize
+
+SVG_NS = "http://www.w3.org/2000/svg"
+
+
+def _set_svg_height(svg_string: str, height_pt: int) -> str:
+    """Set height attribute on SVG root element. Width scales from viewBox."""
+    root = etree.fromstring(svg_string.encode())
+    root.set("height", f"{height_pt}pt")
+    return etree.tostring(root, pretty_print=False, xml_declaration=False).decode()
 
 
 def _version_callback(value: bool) -> None:
@@ -23,6 +34,7 @@ def _version_callback(value: bool) -> None:
 
 app = typer.Typer(
     help=f"signature2svg {__version__} — Convert images or SVGs to clean, color-parametrizable SVGs.",
+    context_settings={"help_option_names": ["-h", "--help"]},
 )
 
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff"}
@@ -30,18 +42,21 @@ IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff"}
 
 @app.command()
 def main(
-    input_path: Annotated[
-        Path | None, typer.Argument(help="Input image or SVG file")
-    ] = None,
+    input_path: Annotated[Path | None, typer.Argument(help="Input image or SVG file")] = None,
     version: Annotated[
-        bool, typer.Option("--version", callback=_version_callback, is_eager=True)
+        bool, typer.Option("--version", "-V", callback=_version_callback, is_eager=True)
     ] = False,
-    turdsize: Annotated[int, typer.Option(help="Suppress speckles smaller than N px (0 = auto from stroke width)")] = 0,
+    turdsize: Annotated[
+        int, typer.Option(help="Suppress speckles smaller than N px (0 = auto from stroke width)")
+    ] = 0,
     alphamax: Annotated[float, typer.Option(help="Corner smoothing (0.0–1.3)")] = 1.0,
     opttolerance: Annotated[float, typer.Option(help="Curve optimization tolerance")] = 0.2,
     blur: Annotated[int, typer.Option(help="Median blur kernel size (0 = off)")] = 3,
     morph: Annotated[int, typer.Option(help="Morphological closing kernel size (0 = off)")] = 2,
     debug: Annotated[bool, typer.Option(help="Write intermediate images to output dir")] = False,
+    height: Annotated[
+        int | None, typer.Option(help="Set SVG height in pt (width scales proportionally)")
+    ] = None,
 ) -> None:
     """Convert an image or SVG to a clean, color-parametrizable SVG.
 
@@ -111,6 +126,9 @@ def main(
         final = parametrize_svg(cleaned)
         typer.echo("[3/3] Optimizing (scour)")
         optimized = optimize_svg(final)
+
+    if height is not None:
+        optimized = _set_svg_height(optimized, height)
 
     output_svg.write_text(optimized, encoding="utf-8")
     typer.echo(f"Done: {output_svg.name}")

@@ -40,7 +40,6 @@ def test_negative_blur() -> None:
         PipelineConfig(blur=-1)
 
 
-
 def test_potrace_error_message() -> None:
     err = PotraceError("some stderr")
     assert "Potrace failed" in str(err)
