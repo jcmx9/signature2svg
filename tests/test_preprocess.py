@@ -108,3 +108,29 @@ def test_noise_removal(tmp_path: Path) -> None:
     result = preprocess(tmp_path / "noisy.png", PipelineConfig())
     num_labels, _ = cv2.connectedComponents(cv2.bitwise_not(result))
     assert num_labels <= 5, f"Too many components ({num_labels}) — noise not removed"
+
+
+def test_dust_removal(tmp_path: Path) -> None:
+    """Isolated small dots far from the signature should be removed."""
+    img = np.ones((300, 600, 3), dtype=np.uint8) * 255
+    # Draw signature strokes (large connected component)
+    cv2.line(img, (50, 150), (550, 150), (0, 0, 0), 3)
+    cv2.line(img, (100, 100), (400, 200), (0, 0, 0), 3)
+    # Add dust specks in corners (small isolated components)
+    cv2.circle(img, (10, 10), 2, (0, 0, 0), -1)
+    cv2.circle(img, (590, 10), 2, (0, 0, 0), -1)
+    cv2.circle(img, (10, 290), 2, (0, 0, 0), -1)
+    cv2.circle(img, (590, 290), 2, (0, 0, 0), -1)
+    cv2.imwrite(str(tmp_path / "dusty.png"), img)
+
+    result = preprocess(tmp_path / "dusty.png", PipelineConfig())
+
+    # Dust should be removed — only signature strokes remain
+    inverted = cv2.bitwise_not(result)
+    num_labels, _, stats, _ = cv2.connectedComponentsWithStats(inverted)
+    # Only signature components should remain (background + 1-2 stroke components)
+    assert num_labels <= 4, f"Too many components ({num_labels}) — dust not removed"
+
+    # The image should be cropped tightly to the signature, not include dust corners
+    assert result.shape[0] < 250, f"Height {result.shape[0]} — dust expanded bounding box"
+    assert result.shape[1] < 550, f"Width {result.shape[1]} — dust expanded bounding box"

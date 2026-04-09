@@ -9,6 +9,32 @@ from numpy.typing import NDArray
 from signature2svg.config import PipelineConfig
 
 
+def _remove_dust(binary: NDArray[np.uint8], min_area_ratio: float = 0.005) -> NDArray[np.uint8]:
+    """Remove small connected components (dust, speckles) from binary image.
+
+    Keeps only components whose area is at least min_area_ratio of the
+    largest component. The largest component is assumed to be the signature.
+    """
+    # Invert: connectedComponents expects white foreground
+    inverted = cv2.bitwise_not(binary)
+    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(inverted)
+
+    if num_labels <= 1:
+        return binary
+
+    # Component 0 is background, find the largest foreground component
+    areas = stats[1:, cv2.CC_STAT_AREA]
+    max_area = areas.max()
+    min_area = int(max_area * min_area_ratio)
+
+    # Zero out small components
+    for label_id in range(1, num_labels):
+        if stats[label_id, cv2.CC_STAT_AREA] < min_area:
+            binary[labels == label_id] = 255  # set to white (background)
+
+    return binary
+
+
 def preprocess(png_path: Path, config: PipelineConfig) -> NDArray[np.uint8]:
     """Convert a signature photo to a binary image (black ink on white).
 
@@ -54,6 +80,10 @@ def preprocess(png_path: Path, config: PipelineConfig) -> NDArray[np.uint8]:
     if config.morph > 0:
         close_kernel: NDArray[np.uint8] = np.ones((config.morph, config.morph), np.uint8)
         binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, close_kernel)
+
+    # Remove small connected components (dust, speckles far from signature)
+    # Keep only components larger than min_component_ratio of the largest component
+    binary = _remove_dust(binary, min_area_ratio=0.005)
 
     # Auto-crop to ink bounding box (remove white border)
     ink_pixels = np.where(binary == 0)
