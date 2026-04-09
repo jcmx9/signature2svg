@@ -19,7 +19,7 @@ if [[ "$MODE" == "dev" ]]; then
     ensure_branch
 
     # Dev bump: increment .devN, commit, no tag
-    bump-my-version bump dev --no-tag
+    uv run bump-my-version bump dev --no-tag
     git push origin dev
 
     version="$(grep '^current_version' pyproject.toml | head -1 | sed 's/.*= "\(.*\)"/\1/')"
@@ -30,9 +30,9 @@ elif [[ "$MODE" == "prod" ]]; then
 
     # Determine bump type: new month or patch
     if [[ "${2:-}" == "--new-month" ]]; then
-        bump-my-version bump release
+        uv run bump-my-version bump release
     else
-        bump-my-version bump patch
+        uv run bump-my-version bump patch
     fi
 
     version="$(grep '^current_version' pyproject.toml | head -1 | sed 's/.*= "\(.*\)"/\1/')"
