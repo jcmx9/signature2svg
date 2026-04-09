@@ -1,90 +1,56 @@
 #!/usr/bin/env bash
 # Dev release:  ./scripts/release.sh dev
-# Prod release: ./scripts/release.sh prod 26.5.0
+# Prod release: ./scripts/release.sh prod
+# New month:    ./scripts/release.sh prod --new-month
 set -euo pipefail
 
-MODE="${1:?Usage: $0 dev | prod <version>}"
-TOML="pyproject.toml"
-INIT="src/signature2svg/__init__.py"
+MODE="${1:?Usage: $0 dev | prod [--new-month]}"
 
-current_version() {
-    grep '^version = ' "$TOML" | sed 's/version = "\(.*\)"/\1/'
-}
-
-set_version() {
-    local v="$1"
-    sed -i '' "s/^version = \".*\"/version = \"$v\"/" "$TOML"
-    sed -i '' "s/^__version__ = \".*\"/__version__ = \"$v\"/" "$INIT"
-}
-
-ensure_clean() {
-    if [[ -n "$(git status --porcelain)" ]]; then
-        echo "Error: Working tree not clean. Commit or stash first." >&2
+ensure_branch() {
+    local branch
+    branch="$(git branch --show-current)"
+    if [[ "$branch" != "dev" ]]; then
+        echo "Error: Must be on dev branch (currently on $branch)" >&2
         exit 1
     fi
 }
 
 if [[ "$MODE" == "dev" ]]; then
-    # Must be on dev branch
-    branch="$(git branch --show-current)"
-    if [[ "$branch" != "dev" ]]; then
-        echo "Error: Must be on dev branch (currently on $branch)" >&2
-        exit 1
-    fi
-    ensure_clean
+    ensure_branch
 
-    cur="$(current_version)"
-    base="${cur%.dev*}"  # strip any existing .devN
+    # Dev bump: increment .devN, commit, no tag
+    bump-my-version bump dev --no-tag
+    git push origin dev
 
-    # Find next dev number
-    last=$(git tag -l "v${base}.dev*" | sed "s/v${base}\.dev//" | sort -n | tail -1)
-    next=$(( ${last:-0} + 1 ))
-    version="${base}.dev${next}"
-
-    set_version "$version"
-    git add "$TOML" "$INIT"
-    git commit -m "release: v$version"
-    git tag "v$version"
-    git push origin dev --tags
-
-    gh release create "v$version" --title "v$version" --target dev --prerelease --generate-notes
+    version="$(grep '^current_version' pyproject.toml | head -1 | sed 's/.*= "\(.*\)"/\1/')"
     echo "Dev release: v$version"
 
 elif [[ "$MODE" == "prod" ]]; then
-    VERSION="${2:?Usage: $0 prod <version> (e.g. 26.5.0)}"
+    ensure_branch
 
-    if [[ ! "$VERSION" =~ ^[0-9]{2}\.[0-9]{1,2}\.[0-9]+$ ]]; then
-        echo "Error: Version must match CalVer YY.M.x (e.g. 26.5.0)" >&2
-        exit 1
+    # Determine bump type: new month or patch
+    if [[ "${2:-}" == "--new-month" ]]; then
+        bump-my-version bump release
+    else
+        bump-my-version bump patch
     fi
 
-    # Must be on dev branch, merge to main
-    branch="$(git branch --show-current)"
-    if [[ "$branch" != "dev" ]]; then
-        echo "Error: Must be on dev branch (currently on $branch)" >&2
-        exit 1
-    fi
-    ensure_clean
-
-    # Set version on dev, commit
-    set_version "$VERSION"
-    git add "$TOML" "$INIT"
-    git commit -m "release: v$VERSION"
+    version="$(grep '^current_version' pyproject.toml | head -1 | sed 's/.*= "\(.*\)"/\1/')"
 
     # Merge dev → main
     git checkout main
     git merge dev --no-edit
-    git tag "v$VERSION"
     git push origin main --tags
 
     # Back to dev
     git checkout dev
     git push origin dev
 
-    gh release create "v$VERSION" --title "v$VERSION" --target main --generate-notes
-    echo "Production release: v$VERSION"
+    # GitHub release
+    gh release create "v$version" --title "v$version" --target main --generate-notes
+    echo "Production release: v$version"
 
 else
-    echo "Usage: $0 dev | prod <version>" >&2
+    echo "Usage: $0 dev | prod [--new-month]" >&2
     exit 1
 fi
