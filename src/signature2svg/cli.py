@@ -25,7 +25,7 @@ app = typer.Typer(
     help=f"signature2svg {__version__} — Convert images or SVGs to clean, color-parametrizable SVGs.",
 )
 
-IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".tiff"}
+IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff"}
 
 
 @app.command()
