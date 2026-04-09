@@ -825,7 +825,6 @@ wheels = [
 
 [[package]]
 name = "signature2svg"
-version = "26.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "lxml" },
