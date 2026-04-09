@@ -62,6 +62,7 @@ def main(
     output_svg = output_dir / f"{stem}_cc.svg"
 
     if ext == ".svg":
+        typer.echo(f"[1/3] Reading SVG: {input_path.name}")
         svg_string = input_path.read_text(encoding="utf-8")
     elif ext in IMAGE_EXTENSIONS:
         config = PipelineConfig(
@@ -72,31 +73,44 @@ def main(
             morph=morph,
             debug=debug,
         )
+
+        typer.echo(f"[1/5] Preprocessing: {input_path.name}")
         binary = preprocess(input_path, config)
 
         # Auto-detect turdsize from stroke width if not set explicitly
         if config.turdsize == 0:
             stroke_w = detect_stroke_width(binary)
             config = config.model_copy(update={"turdsize": max(2, int(stroke_w * 0.7))})
-            typer.echo(f"Stroke width: {stroke_w:.1f}px → turdsize: {config.turdsize}")
+            typer.echo(f"      Stroke width: {stroke_w:.1f}px → turdsize: {config.turdsize}")
 
         # Save cleaned binary as PNG (black ink on white background) for manual editing
         output_png = output_dir / f"{stem}_cc.png"
         cv2.imwrite(str(output_png), binary)
-        typer.echo(f"Written: {output_png}")
+        typer.echo(f"      Saved: {output_png.name}")
 
         if config.debug:
             gray = cv2.imread(str(input_path), cv2.IMREAD_GRAYSCALE)
             if gray is not None:
                 cv2.imwrite(str(output_dir / f"{stem}_grayscale.png"), gray)
 
+        typer.echo("[2/5] Vectorizing (potrace)")
         svg_string = vectorize(binary, config)
+
+        typer.echo("[3/5] Cleaning SVG")
+        cleaned = clean_svg(svg_string)
+        typer.echo("[4/5] Setting currentColor")
+        final = parametrize_svg(cleaned)
+        typer.echo("[5/5] Optimizing (scour)")
+        optimized = optimize_svg(final)
     else:
         raise typer.BadParameter(f"Unsupported file format: {ext}")
 
-    cleaned = clean_svg(svg_string)
-    final = parametrize_svg(cleaned)
-    optimized = optimize_svg(final)
+    if ext == ".svg":
+        typer.echo("[2/3] Cleaning + parametrizing")
+        cleaned = clean_svg(svg_string)
+        final = parametrize_svg(cleaned)
+        typer.echo("[3/3] Optimizing (scour)")
+        optimized = optimize_svg(final)
 
     output_svg.write_text(optimized, encoding="utf-8")
-    typer.echo(f"Written: {output_svg}")
+    typer.echo(f"Done: {output_svg.name}")
