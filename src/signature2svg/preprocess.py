@@ -35,6 +35,41 @@ def _remove_dust(binary: NDArray[np.uint8], min_area_ratio: float = 0.005) -> ND
     return binary
 
 
+def detect_stroke_width(binary: NDArray[np.uint8]) -> float:
+    """Detect the typical stroke width in a binary image using distance transform.
+
+    Args:
+        binary: 2D array, 0 = ink, 255 = background.
+
+    Returns:
+        Estimated stroke width in pixels. Returns 2.0 as fallback if no ink found.
+    """
+    # Ink as foreground (white) for distance transform
+    ink_mask = (binary == 0).astype(np.uint8) * 255
+
+    if np.sum(ink_mask) == 0:
+        return 2.0
+
+    # Distance transform: each ink pixel gets the distance to nearest background pixel
+    dist = cv2.distanceTransform(ink_mask, cv2.DIST_L2, 5)
+
+    # Skeletonize: thin the ink to 1px lines, then read distances at skeleton points
+    # The distance at skeleton points = half the local stroke width
+    skeleton = cv2.ximgproc.thinning(ink_mask) if hasattr(cv2, "ximgproc") else None
+
+    if skeleton is not None:
+        skeleton_distances = dist[skeleton > 0]
+        if len(skeleton_distances) > 0:
+            return float(np.median(skeleton_distances)) * 2
+    else:
+        # Fallback without skeletonization: use median of all distance values on ink
+        ink_distances = dist[dist > 0]
+        if len(ink_distances) > 0:
+            return float(np.median(ink_distances)) * 2
+
+    return 2.0
+
+
 def preprocess(png_path: Path, config: PipelineConfig) -> NDArray[np.uint8]:
     """Convert a signature photo to a binary image (black ink on white).
 

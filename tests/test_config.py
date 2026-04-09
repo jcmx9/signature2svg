@@ -9,7 +9,7 @@ from signature2svg.exceptions import PotraceError
 
 def test_default_config() -> None:
     config = PipelineConfig()
-    assert config.turdsize == 2
+    assert config.turdsize == 0  # 0 = auto-detect from stroke width
     assert config.alphamax == 1.0
     assert config.opttolerance == 0.2
     assert config.blur == 3

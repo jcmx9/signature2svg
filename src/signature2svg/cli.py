@@ -11,7 +11,7 @@ from signature2svg.clean import clean_svg
 from signature2svg.config import PipelineConfig
 from signature2svg.optimize import optimize_svg
 from signature2svg.parametrize import parametrize_svg
-from signature2svg.preprocess import preprocess
+from signature2svg.preprocess import detect_stroke_width, preprocess
 from signature2svg.vectorize import vectorize
 
 
@@ -22,7 +22,7 @@ def _version_callback(value: bool) -> None:
 
 
 app = typer.Typer(
-    help=f"signature2svg {__version__} — Convert images or SVGs to clean, color-parametrizable SVGs."
+    help=f"signature2svg {__version__} — Convert images or SVGs to clean, color-parametrizable SVGs.",
 )
 
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".tiff"}
@@ -34,7 +34,7 @@ def main(
     version: Annotated[
         bool, typer.Option("--version", callback=_version_callback, is_eager=True)
     ] = False,
-    turdsize: Annotated[int, typer.Option(help="Suppress speckles smaller than N px")] = 2,
+    turdsize: Annotated[int, typer.Option(help="Suppress speckles smaller than N px (0 = auto from stroke width)")] = 0,
     alphamax: Annotated[float, typer.Option(help="Corner smoothing (0.0–1.3)")] = 1.0,
     opttolerance: Annotated[float, typer.Option(help="Curve optimization tolerance")] = 0.2,
     blur: Annotated[int, typer.Option(help="Median blur kernel size (0 = off)")] = 3,
@@ -64,6 +64,12 @@ def main(
             debug=debug,
         )
         binary = preprocess(input_path, config)
+
+        # Auto-detect turdsize from stroke width if not set explicitly
+        if config.turdsize == 0:
+            stroke_w = detect_stroke_width(binary)
+            config = config.model_copy(update={"turdsize": max(2, int(stroke_w * 0.7))})
+            typer.echo(f"Stroke width: {stroke_w:.1f}px → turdsize: {config.turdsize}")
 
         # Save cleaned binary as PNG (black ink on white background) for manual editing
         output_png = output_dir / f"{stem}_cc.png"
