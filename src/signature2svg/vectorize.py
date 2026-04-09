@@ -28,10 +28,11 @@ def vectorize(binary: NDArray[np.uint8], config: PipelineConfig) -> str:
     with tempfile.TemporaryDirectory() as tmp_dir:
         pbm_path = Path(tmp_dir) / "input.pbm"
 
-        # Potrace expects PBM: 1 = black, 0 = white. OpenCV binary: 0 = black, 255 = white.
-        # Invert so ink pixels become 1 (foreground for Potrace).
-        inverted = cv2.bitwise_not(binary)
-        cv2.imwrite(str(pbm_path), inverted)
+        # Our binary: 0 = ink, 255 = background.
+        # cv2.imwrite PBM: 0→white, 255→black. So background becomes black in PBM.
+        # Potrace traces black regions but uses even-odd fill rule internally,
+        # producing correct letterforms without a background rectangle.
+        cv2.imwrite(str(pbm_path), binary)
 
         cmd = [
             "potrace",

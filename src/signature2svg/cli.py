@@ -21,7 +21,9 @@ def _version_callback(value: bool) -> None:
         raise typer.Exit()
 
 
-app = typer.Typer(help="Convert images or SVGs to clean, color-parametrizable SVGs.")
+app = typer.Typer(
+    help=f"signature2svg {__version__} — Convert images or SVGs to clean, color-parametrizable SVGs."
+)
 
 IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".tiff"}
 

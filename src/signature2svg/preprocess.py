@@ -58,6 +58,13 @@ def preprocess(png_path: Path, config: PipelineConfig) -> NDArray[np.uint8]:
         raise FileNotFoundError(f"cv2 could not read image: {png_path}")
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
+    # Upscale small images for better vectorization quality
+    min_width = 2000
+    h, w = gray.shape[:2]
+    if w < min_width:
+        scale = min_width / w
+        gray = cv2.resize(gray, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
+
     # Median blur to reduce photo noise
     if config.blur > 0:
         blur_kernel = config.blur if config.blur % 2 == 1 else config.blur + 1

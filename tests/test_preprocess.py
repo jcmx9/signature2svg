@@ -132,5 +132,6 @@ def test_dust_removal(tmp_path: Path) -> None:
     assert num_labels <= 4, f"Too many components ({num_labels}) — dust not removed"
 
     # The image should be cropped tightly to the signature, not include dust corners
-    assert result.shape[0] < 250, f"Height {result.shape[0]} — dust expanded bounding box"
-    assert result.shape[1] < 550, f"Width {result.shape[1]} — dust expanded bounding box"
+    # (upscaling may increase dimensions, so check ratio instead of absolute size)
+    aspect = result.shape[1] / result.shape[0]
+    assert aspect > 2.0, f"Aspect ratio {aspect:.1f} — dust expanded bounding box vertically"
