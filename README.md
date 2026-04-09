@@ -20,8 +20,11 @@ sudo apt install potrace
 ## Installation
 
 ```bash
-# From GitHub (recommended)
+# Install (requires uv)
 uv tool install git+https://github.com/jcmx9/signature2svg.git
+
+# Update
+uv tool install --force git+https://github.com/jcmx9/signature2svg.git
 
 # From source
 git clone https://github.com/jcmx9/signature2svg.git
