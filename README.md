@@ -118,7 +118,7 @@ Photo → Grayscale → Median Blur → CLAHE → Adaptive Threshold → Morph O
 5. **Auto-crop** trims to the ink bounding box
 6. **Potrace** traces the bitmap to vector paths
 7. **Clean** removes background rects, metadata, editor attributes
-8. **Parametrize** sets `fill="currentColor"` on all paths and adds a `<style>` fallback
+8. **Parametrize** sets `fill="currentColor"` on all paths, removes `<style>` blocks
 9. **Optimize** runs scour for lossless SVG compression
 
 ### SVG mode

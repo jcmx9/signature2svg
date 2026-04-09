@@ -6,12 +6,20 @@ from typing import Annotated
 import cv2
 import typer
 
+from signature2svg import __version__
 from signature2svg.clean import clean_svg
 from signature2svg.config import PipelineConfig
 from signature2svg.optimize import optimize_svg
 from signature2svg.parametrize import parametrize_svg
 from signature2svg.preprocess import preprocess
 from signature2svg.vectorize import vectorize
+
+
+def _version_callback(value: bool) -> None:
+    if value:
+        typer.echo(f"signature2svg {__version__}")
+        raise typer.Exit()
+
 
 app = typer.Typer(help="Convert images or SVGs to clean, color-parametrizable SVGs.")
 
@@ -20,7 +28,10 @@ IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".tiff"}
 
 @app.command()
 def main(
-    input_path: Annotated[Path, typer.Argument(help="Input image or SVG file")],
+    input_path: Annotated[Path, typer.Argument(help="Input image or SVG file", exists=True)],
+    version: Annotated[
+        bool, typer.Option("--version", callback=_version_callback, is_eager=True)
+    ] = False,
     turdsize: Annotated[int, typer.Option(help="Suppress speckles smaller than N px")] = 2,
     alphamax: Annotated[float, typer.Option(help="Corner smoothing (0.0–1.3)")] = 1.0,
     opttolerance: Annotated[float, typer.Option(help="Curve optimization tolerance")] = 0.2,

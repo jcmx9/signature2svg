@@ -5,9 +5,6 @@ import shutil
 import pytest
 
 
-requires_potrace = pytest.mark.requires_potrace
-
-
 def pytest_configure(config: pytest.Config) -> None:
     """Skip tests marked requires_potrace if potrace is not installed."""
     potrace_available = shutil.which("potrace") is not None

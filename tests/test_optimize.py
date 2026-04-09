@@ -7,7 +7,6 @@ from signature2svg.optimize import optimize_svg
 SVG_NS = "http://www.w3.org/2000/svg"
 
 SAMPLE_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50">
-<style>path { fill: currentColor; }</style>
 <path d="M 0.000 0.000 L 100.000 0.000 L 100.000 50.000 Z" fill="currentColor"/>
 </svg>"""
 
@@ -47,6 +46,22 @@ def test_preserves_path_content() -> None:
     assert len(paths) >= 1
 
 
-def test_preserves_style_block() -> None:
+def test_current_color_on_path_attributes() -> None:
+    """fill="currentColor" must remain as path attribute, not in a style block."""
     result = optimize_svg(SAMPLE_SVG)
-    assert "currentColor" in result
+    root = etree.fromstring(result.encode())
+    paths = root.findall(".//{%s}path" % SVG_NS) + root.findall(".//path")
+    for path in paths:
+        assert path.get("fill") == "currentColor"
+
+
+def test_no_style_block_in_output() -> None:
+    """Scour might create style blocks — post-fixup must remove them."""
+    svg_with_style = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 50">
+<style>path { fill: currentColor; }</style>
+<path d="M 0 0 L 100 0 L 100 50 Z" fill="currentColor"/>
+</svg>"""
+    result = optimize_svg(svg_with_style)
+    root = etree.fromstring(result.encode())
+    styles = root.findall(".//{%s}style" % SVG_NS) + root.findall(".//style")
+    assert len(styles) == 0

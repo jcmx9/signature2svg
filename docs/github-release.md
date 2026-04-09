@@ -16,10 +16,9 @@ CalVer `YY.M.x` with PEP 440 dev suffix, managed by **bump-my-version**:
 - Production: `26.4.1`, `26.5.0`, `26.12.3`
 - Development: `26.4.1.dev0`, `26.4.1.dev1`, ...
 
-Version is stored in three places (all updated automatically):
+Version is stored in two places (both updated automatically by bump-my-version):
 - `pyproject.toml` → `current_version` (bumpversion config)
-- `pyproject.toml` → `version` (project metadata)
-- `src/signature2svg/__init__.py` → `__version__`
+- `src/signature2svg/__init__.py` → `__version__` (single source of truth, also read by hatch for `[project] dynamic = ["version"]`)
 
 ## Release Commands
 

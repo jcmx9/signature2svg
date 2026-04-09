@@ -41,7 +41,7 @@ def clean_svg(svg_string: str) -> str:
             if parent is not None:
                 parent.remove(rect)
 
-    # Strip fill/stroke attributes from <g> elements (Potrace sets fill="#000000" on groups)
+    # Strip fill/stroke from <g> elements (Potrace sets fill="#000000" stroke="none" on groups)
     for g in root.findall(".//{%s}g" % SVG_NS) + root.findall(".//g"):
         for attr in ("fill", "stroke"):
             if attr in g.attrib:
