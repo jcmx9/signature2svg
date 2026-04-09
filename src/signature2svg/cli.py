@@ -30,7 +30,9 @@ IMAGE_EXTENSIONS = {".png", ".jpg", ".jpeg", ".bmp", ".tiff"}
 
 @app.command()
 def main(
-    input_path: Annotated[Path, typer.Argument(help="Input image or SVG file", exists=True)],
+    input_path: Annotated[
+        Path | None, typer.Argument(help="Input image or SVG file")
+    ] = None,
     version: Annotated[
         bool, typer.Option("--version", callback=_version_callback, is_eager=True)
     ] = False,
@@ -47,6 +49,13 @@ def main(
       input.jpg → input_cc.svg + input_cc.png (cleaned binary for manual editing)
       input.svg → input_cc.svg
     """
+    if input_path is None:
+        typer.echo(typer.main.get_command(app).get_help(typer.Context(typer.main.get_command(app))))
+        raise typer.Exit()
+
+    if not input_path.exists():
+        raise typer.BadParameter(f"File not found: {input_path}")
+
     ext = input_path.suffix.lower()
     stem = input_path.stem
     output_dir = input_path.parent
