@@ -1,6 +1,6 @@
 # signature2svg
 
-Convert a photograph of a handwritten signature into a clean, scalable SVG with color control via `currentColor`.
+Convert a photograph of a handwritten signature into a clean, scalable SVG with configurable fill color.
 
 Also optimizes existing SVGs — pass an SVG file as input to clean, parametrize, and compress it.
 
@@ -49,7 +49,7 @@ Produces `photo_cc.svg` and `photo_cc.png`. The PNG is the cleaned binary image 
 signature2svg input.svg
 ```
 
-Produces `input_cc.svg`. Cleans the SVG: sets `fill="currentColor"`, removes backgrounds, strips editor metadata, optimizes with scour.
+Produces `input_cc.svg`. Cleans the SVG: sets fill color (default `#2C3F6B`), removes backgrounds, strips editor metadata, optimizes with scour.
 
 ### Iterative workflow
 
@@ -70,28 +70,35 @@ Output:
   {name}_cc.png   Cleaned binary image (image mode only)
 
 Options:
-  --turdsize INT        Suppress speckles smaller than N px  [default: 2]
+  --turdsize INT        Suppress speckles smaller than N px (0 = auto)  [default: 0]
   --alphamax FLOAT      Corner smoothing 0.0–1.3  [default: 1.0]
   --opttolerance FLOAT  Curve optimization tolerance  [default: 0.2]
   --blur INT            Median blur kernel size, 0 = off  [default: 3]
   --morph INT           Morphological closing kernel, 0 = off  [default: 2]
+  --hexcode TEXT         Fill color for signature paths  [default: #2C3F6B]
+  --height INT          Set SVG height in pt (width scales proportionally)
   --debug / --no-debug  Write intermediate images to output dir  [default: no-debug]
 ```
 
-Image-specific options are ignored in SVG mode.
+`--hexcode` accepts any CSS color value, e.g. `#000000` or `currentColor`. Image-specific options are ignored in SVG mode.
 
 ## Output
 
 The output SVG is designed for embedding with external color control:
 
-- All paths use `fill="currentColor"` — color is inherited from the parent element
-- No fixed `width`/`height` — SVG scales freely to any container size
+- All paths use the configured fill color (default `#2C3F6B`, override with `--hexcode`)
+- No fixed `width`/`height` by default — SVG scales freely (`--height` sets fixed height in pt)
 - No background elements, no editor metadata, no namespace bloat
 - Paths are losslessly optimized (shortened notation, compressed IDs)
 
 ### Typst
 
 ```typst
+// Default color (#2C3F6B) is baked in — just embed:
+#image("signature.svg", width: 45mm)
+
+// Or use currentColor mode for external control:
+// signature2svg input.jpg --hexcode currentColor
 #text(fill: rgb("#0053A0"))[#image("signature.svg", width: 45mm)]
 ```
 
@@ -118,7 +125,7 @@ Photo → Grayscale → Median Blur → CLAHE → Adaptive Threshold → Morph O
 5. **Auto-crop** trims to the ink bounding box
 6. **Potrace** traces the bitmap to vector paths
 7. **Clean** removes background rects, metadata, editor attributes
-8. **Parametrize** sets `fill="currentColor"` on all paths, removes `<style>` blocks
+8. **Parametrize** sets fill color on all paths (default `#2C3F6B`), removes `<style>` blocks
 9. **Optimize** runs scour for lossless SVG compression
 
 ### SVG mode

@@ -57,6 +57,9 @@ def main(
     height: Annotated[
         int | None, typer.Option(help="Set SVG height in pt (width scales proportionally)")
     ] = None,
+    hexcode: Annotated[
+        str, typer.Option(help="Fill color for signature paths (hex code or 'currentColor')")
+    ] = "#2C3F6B",
 ) -> None:
     """Convert an image or SVG to a clean, color-parametrizable SVG.
 
@@ -113,17 +116,17 @@ def main(
 
         typer.echo("[3/5] Cleaning SVG")
         cleaned = clean_svg(svg_string)
-        typer.echo("[4/5] Setting currentColor")
-        final = parametrize_svg(cleaned)
+        typer.echo(f"[4/5] Setting fill: {hexcode}")
+        final = parametrize_svg(cleaned, color=hexcode)
         typer.echo("[5/5] Optimizing (scour)")
         optimized = optimize_svg(final)
     else:
         raise typer.BadParameter(f"Unsupported file format: {ext}")
 
     if ext == ".svg":
-        typer.echo("[2/3] Cleaning + parametrizing")
+        typer.echo(f"[2/3] Cleaning + parametrizing (fill: {hexcode})")
         cleaned = clean_svg(svg_string)
-        final = parametrize_svg(cleaned)
+        final = parametrize_svg(cleaned, color=hexcode)
         typer.echo("[3/3] Optimizing (scour)")
         optimized = optimize_svg(final)
 

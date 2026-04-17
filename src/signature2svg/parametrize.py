@@ -7,21 +7,22 @@ from lxml import etree
 SVG_NS = "http://www.w3.org/2000/svg"
 
 
-def parametrize_svg(svg_string: str) -> str:
-    """Replace all path fills with currentColor for external color control.
+def parametrize_svg(svg_string: str, color: str = "#2C3F6B") -> str:
+    """Replace all path fills with the given color.
 
     Args:
         svg_string: Cleaned SVG string.
+        color: Fill color for paths (hex code or 'currentColor').
 
     Returns:
-        SVG string with all paths using fill="currentColor".
+        SVG string with all paths using the specified fill color.
     """
     root = etree.fromstring(svg_string.encode())
 
-    # Process all path elements — set fill="currentColor" on each
+    # Process all path elements — set fill to specified color
     paths = root.findall(".//{%s}path" % SVG_NS) + root.findall(".//path")
     for path in paths:
-        path.set("fill", "currentColor")
+        path.set("fill", color)
 
         # Remove fill from inline style
         style = path.get("style", "")
