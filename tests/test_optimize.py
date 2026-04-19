@@ -46,13 +46,22 @@ def test_preserves_path_content() -> None:
     assert len(paths) >= 1
 
 
-def test_current_color_on_path_attributes() -> None:
-    """fill="currentColor" must remain as path attribute, not in a style block."""
+def test_fill_color_on_path_attributes() -> None:
+    """Fill color must remain as path attribute, not in a style block."""
+    result = optimize_svg(SAMPLE_SVG, color="#FF0000")
+    root = etree.fromstring(result.encode())
+    paths = root.findall(".//{%s}path" % SVG_NS) + root.findall(".//path")
+    for path in paths:
+        assert path.get("fill") == "#FF0000"
+
+
+def test_default_fill_color() -> None:
+    """Default fill color should be #2C3F6B."""
     result = optimize_svg(SAMPLE_SVG)
     root = etree.fromstring(result.encode())
     paths = root.findall(".//{%s}path" % SVG_NS) + root.findall(".//path")
     for path in paths:
-        assert path.get("fill") == "currentColor"
+        assert path.get("fill") == "#2C3F6B"
 
 
 def test_no_style_block_in_output() -> None:

@@ -9,13 +9,13 @@ import scour.scour as scour_mod
 SVG_NS = "http://www.w3.org/2000/svg"
 
 
-def optimize_svg(svg_string: str) -> str:
-    """Optimize SVG losslessly using scour, then restore currentColor on paths.
+def optimize_svg(svg_string: str, color: str = "#2C3F6B") -> str:
+    """Optimize SVG losslessly using scour, then restore fill color on paths.
 
-    Scour may consolidate fill="currentColor" from path attributes into a
-    <style> block. This function re-applies fill="currentColor" as path
-    attributes and removes any <style> blocks to keep the output minimal
-    and compatible with Typst/HTML embedding.
+    Scour may consolidate fill attributes into a <style> block. This function
+    re-applies the specified fill color as path attributes and removes any
+    <style> blocks to keep the output minimal and compatible with Typst/HTML
+    embedding.
     """
     options = scour_mod.generateDefaultOptions()
     options.strip_xml_prolog = True
@@ -34,7 +34,7 @@ def optimize_svg(svg_string: str) -> str:
     root = etree.fromstring(optimized.encode())
 
     for path in root.findall(".//{%s}path" % SVG_NS) + root.findall(".//path"):
-        path.set("fill", "currentColor")
+        path.set("fill", color)
         # Remove fill from inline style if scour moved it there
         style = path.get("style", "")
         if style:

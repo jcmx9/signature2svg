@@ -119,7 +119,7 @@ def main(
         typer.echo(f"[4/5] Setting fill: {hexcode}")
         final = parametrize_svg(cleaned, color=hexcode)
         typer.echo("[5/5] Optimizing (scour)")
-        optimized = optimize_svg(final)
+        optimized = optimize_svg(final, color=hexcode)
     else:
         raise typer.BadParameter(f"Unsupported file format: {ext}")
 
@@ -128,7 +128,7 @@ def main(
         cleaned = clean_svg(svg_string)
         final = parametrize_svg(cleaned, color=hexcode)
         typer.echo("[3/3] Optimizing (scour)")
-        optimized = optimize_svg(final)
+        optimized = optimize_svg(final, color=hexcode)
 
     if height is not None:
         optimized = _set_svg_height(optimized, height)
