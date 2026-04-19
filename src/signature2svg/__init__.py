@@ -1,3 +1,3 @@
 """Convert signature photos to clean, color-parametrizable SVGs."""
 
-__version__ = "26.4.8"
+__version__ = "26.4.8.dev2"
